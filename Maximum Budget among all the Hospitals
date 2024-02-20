@@ -1,0 +1,105 @@
+using namespace std;
+#define ll long long
+
+const int N = 1e5 + 7;
+bitset<N> bt;
+ll low[N], tim[N], dep[N], timer, len;
+vector<pair<ll, ll>> g[N], g2[N];
+
+void dfs(ll i, ll prev)
+{
+    bt[i] = 1;
+    low[i] = tim[i] = timer++;
+    dep[i] = 1;
+    for (auto j : g[i])
+    {
+        if (j.first == prev)
+            continue;
+        if (bt[j.first])
+            low[i] = min(low[i], tim[j.first]);
+        else
+        {
+            dfs(j.first, i);
+            if (low[j.first] > tim[i])
+            {
+                ll cost = j.second * dep[j.first] * (len - dep[j.first]);
+                g2[j.first].push_back({i, cost});
+                g2[i].push_back({j.first, cost});
+            }
+            dep[i] += dep[j.first];
+            low[i] = min(low[i], low[j.first]);
+        }
+    }
+}
+
+ll dfs2(ll i, ll prev, ll m)
+{
+    bt[i] = 1;
+    ll cost = 0;
+    for (auto j : g2[i])
+    {
+        if (j.first == prev)
+            continue;
+        ll x = dfs2(j.first, i, m);
+        if (x > m)
+            return 1e15;
+        cost += max(0ll, j.second + x - m);
+    }
+    return cost;
+}
+
+int main()
+{
+    ios::sync_with_stdio(0);
+    cin.tie(0);
+    int t = 1;
+    int l = t;
+    while (t--)
+    {
+        ll N, i, M;
+        cin >> N >> M;
+        len = N;
+        for (i = 0; i <= N; i++)
+            dep[i] = 1;
+        while (M--)
+        {
+            ll u, v, w;
+            cin >> u >> v >> w;
+            g[u].push_back({v, w});
+            g[v].push_back({u, w});
+        }
+        for (i = 1; i <= N; i++)
+        {
+            if (bt[i] == 0)
+                dfs(i, -1);
+        }
+        ll l = 1, r = 1e18, ans = 0;
+        while (l <= r)
+        {
+            ll mid = (l + r) / 2;
+            for (i = 0; i <= N; i++)
+                bt[i] = 0;
+            ll z = 0;
+            for (i = 1; i <= N; i++)
+            {
+                if (bt[i] == 0)
+                {
+                    if (dfs2(i, -1, mid) > mid)
+                    {
+                        z = 1;
+                        break;
+                    }
+                }
+            }
+            if (z)
+                l = mid + 1;
+            else
+            {
+                r = mid - 1;
+                ans = mid;
+            }
+        }
+        cout << ans << "\n";
+    }
+    return 0;
+}
